@@ -1,0 +1,4 @@
+radio = "Hermes"
+version = "3.0"
+protocol = "p1"
+status = "idle"
