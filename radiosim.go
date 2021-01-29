@@ -9,16 +9,19 @@ package main
 // licensed under the GPL3
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"strconv"
 	"strings"
 
-	"github.com/BurntSushi/toml"
+	"github.com/naoina/toml"
 )
 
+//Config parameters for the radiosim program
 type Config struct {
 	Radio    string
 	Version  string
@@ -36,17 +39,14 @@ type packetBt struct {
 func main() {
 	var cfg Config
 	var radioname string
-	//var radioMAC []byte
 	var pBt packetBt
 
-	data, err := ioutil.ReadFile("config.toml")
+	f, err := os.Open("config.toml")
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
-
-	_, err = toml.Decode(string(data), &cfg)
-	if err != nil {
+	defer f.Close()
+	if err := toml.NewDecoder(f).Decode(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
@@ -78,7 +78,17 @@ func main() {
 	// Conver the cfg string to decimal number
 	// convert decimal to hex number
 
-	pBt.Version = 0x26
+	vers := strings.Replace(cfg.Version, ".", "", -1)
+	fmt.Printf("**** vers %#v\n", vers)
+	version, _ := strconv.ParseInt(vers, 16, 64)
+	fmt.Printf("**** version %#v\n", version)
+	err = binary.Write(pBt.Version, binary.LittleEndian, version)
+	//pBt.Version = []byte(vers)
+
+	fmt.Printf("**** Version %#v\n", pBt.Version)
+	if err != nil {
+		panic(err)
+	}
 
 	inf, err := net.Interfaces()
 	if err != nil {
@@ -89,7 +99,7 @@ func main() {
 
 	for _, i := range inf {
 		//Check interface name
-		if i.Name == "enp0s25" {
+		if i.Name != "lo" {
 			pBt.radioMAC = i.HardwareAddr
 		}
 	}
