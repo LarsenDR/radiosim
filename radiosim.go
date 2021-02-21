@@ -9,13 +9,11 @@ package main
 // licensed under the GPL3
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/naoina/toml"
@@ -36,6 +34,11 @@ type packetBt struct {
 	Board    byte
 }
 
+func radiostringtohex(ver string) string {
+	vers := strings.Replace(ver, ".", "", -1)
+	return vers
+}
+
 func main() {
 	var cfg Config
 	var radioname string
@@ -46,6 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer f.Close()
+
 	if err := toml.NewDecoder(f).Decode(&cfg); err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +71,7 @@ func main() {
 		pBt.Board = 0x02
 	} else if radioname == "angelia" {
 		pBt.Board = 0x04
-	} else if radioname == "orian" {
+	} else if radioname == "orion" {
 		pBt.Board = 0x05
 	} else if radioname == "hermes_lite" {
 		pBt.Board = 0x06
@@ -75,27 +79,10 @@ func main() {
 		pBt.Board = 0x07
 	}
 
-	// Conver the cfg string to decimal number
-	// convert decimal to hex number
-
-	vers := strings.Replace(cfg.Version, ".", "", -1)
-	fmt.Printf("**** vers %#v\n", vers)
-	version, _ := strconv.ParseInt(vers, 16, 64)
-	fmt.Printf("**** version %#v\n", version)
-	err = binary.Write(pBt.Version, binary.LittleEndian, version)
-	//pBt.Version = []byte(vers)
-
-	fmt.Printf("**** Version %#v\n", pBt.Version)
-	if err != nil {
-		panic(err)
-	}
-
 	inf, err := net.Interfaces()
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Printf("%#v\n", inf)
 
 	for _, i := range inf {
 		//Check interface name
@@ -103,6 +90,10 @@ func main() {
 			pBt.radioMAC = i.HardwareAddr
 		}
 	}
+
+	ver := int64(32)
+	fmt.Printf("%#v %x\n", ver, ver)
+	pBt.Version = byte(ver)
 
 	fmt.Printf(" radioMAC %#v\n", pBt.radioMAC)
 
@@ -123,7 +114,7 @@ func main() {
 	}
 }
 
-// handleConnection is a goroutine to handle on connection at a time
+// handleConnection is a goroutine to handle on connection at a tfmt.Printf("test %#v %#v length=%d\n", rbuf, ver, len(rbuf))ime
 func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt packetBt) {
 
 	fmt.Printf("Received from %s %x length=%d\n", addr, buf[:n], len(buf))
@@ -135,15 +126,21 @@ func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt p
 		panic(err)
 	}
 
+	fmt.Printf("test %#v length=%d\n", rbuf, len(rbuf))
 	rbuf = append(rbuf, pkt.Status)
+	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Status, len(rbuf))
 	rbuf = append(rbuf, pkt.radioMAC...)
-	rbuf = append(rbuf, pkt.Version)
-	rbuf = append(rbuf, pkt.Board)
 
-	for i := 1; i < 50; i++ {
+	fmt.Printf("test MAC %#v Version %#v \n", pkt.radioMAC, pkt.Version)
+	rbuf = append(rbuf, pkt.Version)
+	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Version, len(rbuf))
+	rbuf = append(rbuf, pkt.Board)
+	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Board, len(rbuf))
+
+	for i := 1; i < 52; i++ {
 		rbuf = append(rbuf, 0x00)
 	}
 
-	fmt.Printf("Sent to %s %x length=%d\n", addr, rbuf[:n], len(rbuf))
+	fmt.Printf("Sent to %#v %x length=%d\n", addr, rbuf[:n], len(rbuf))
 	pc.WriteTo(rbuf, addr)
 }
