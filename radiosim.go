@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/naoina/toml"
@@ -34,8 +35,9 @@ type packetBt struct {
 	Board    byte
 }
 
-func radiostringtohex(ver string) string {
-	vers := strings.Replace(ver, ".", "", -1)
+func radiostringtohex(ver string) int64 {
+	v := strings.Replace(ver, ".", "", -1)
+	vers, _ := strconv.ParseInt(v, 10, 64)
 	return vers
 }
 
@@ -54,9 +56,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Config:\n Radio %s\n Version %#v\n Protocol %s\n status %s\n", cfg.Radio, cfg.Version, cfg.Protocol, cfg.Status)
-
-	if cfg.Status == "idle" {
+	stat := strings.ToLower(cfg.Status)
+	if stat == "idle" {
 		pBt.Status = 0x02
 	} else {
 		pBt.Status = 0x03
@@ -91,11 +92,11 @@ func main() {
 		}
 	}
 
-	ver := int64(32)
-	fmt.Printf("%#v %x\n", ver, ver)
+	ver := radiostringtohex(cfg.Version)
+	// fmt.Printf("%#v %x\n", ver, ver)
 	pBt.Version = byte(ver)
 
-	fmt.Printf(" radioMAC %#v\n", pBt.radioMAC)
+	// fmt.Printf(" radioMAC %#v\n", pBt.radioMAC)
 
 	pc, err := net.ListenPacket("udp4", ":1024")
 	if err != nil {
@@ -126,18 +127,18 @@ func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt p
 		panic(err)
 	}
 
-	fmt.Printf("test %#v length=%d\n", rbuf, len(rbuf))
+	// fmt.Printf("test %#v length=%d\n", rbuf, len(rbuf))
 	rbuf = append(rbuf, pkt.Status)
-	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Status, len(rbuf))
+	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Status, len(rbuf))
 	rbuf = append(rbuf, pkt.radioMAC...)
 
-	fmt.Printf("test MAC %#v Version %#v \n", pkt.radioMAC, pkt.Version)
+	// fmt.Printf("test MAC %#v Version %#v \n", pkt.radioMAC, pkt.Version)
 	rbuf = append(rbuf, pkt.Version)
-	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Version, len(rbuf))
+	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Version, len(rbuf))
 	rbuf = append(rbuf, pkt.Board)
-	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Board, len(rbuf))
+	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Board, len(rbuf))
 
-	for i := 1; i < 52; i++ {
+	for i := 1; i < 54; i++ {
 		rbuf = append(rbuf, 0x00)
 	}
 
