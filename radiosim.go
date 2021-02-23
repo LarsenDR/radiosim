@@ -46,6 +46,12 @@ func main() {
 	var radioname string
 	var pBt packetBt
 
+	const progname = "Radio Simulator"
+	const progvers = "0.1.0"
+	const configname = "config.toml"
+
+	fmt.Printf("%s, version:%s, config:%s\n", progname, progvers, configname)
+
 	f, err := os.Open("config.toml")
 	if err != nil {
 		log.Fatal(err)
