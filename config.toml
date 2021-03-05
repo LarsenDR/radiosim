@@ -1,4 +1,4 @@
-radio = "Metis"
-version = "2.6"
-protocol = "p1"
+radio = "TangerineSDR"
+version = "1.6"
+protocol = ""
 status = "idle"

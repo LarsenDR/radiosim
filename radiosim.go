@@ -83,7 +83,7 @@ func main() {
 	} else if radioname == "hermes_lite" {
 		pBt.Board = 0x06
 	} else if radioname == "tangerinesdr" {
-		pBt.Board = 0x07
+		pBt.Board = 0x0a
 	}
 
 	inf, err := net.Interfaces()
