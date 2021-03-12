@@ -1,4 +1,6 @@
 radio = "TangerineSDR"
-version = "1.6"
+aport = "1024"
+bport = "43573"
+version = "0.2"
 protocol = ""
 status = "idle"

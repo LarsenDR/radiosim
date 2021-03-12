@@ -23,6 +23,8 @@ import (
 //Config parameters for the radiosim program
 type Config struct {
 	Radio    string
+	Aport    string
+	Bport    string
 	Version  string
 	Protocol string
 	Status   string
