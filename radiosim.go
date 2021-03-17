@@ -33,13 +33,14 @@ type Config struct {
 type packetBt struct {
 	Status   byte
 	radioMAC []byte
+	Bport    []byte
 	Version  byte
 	Board    byte
 }
 
-func radiostringtohex(ver string) int64 {
+func radiostringtohex(ver string) uint64 {
 	v := strings.Replace(ver, ".", "", -1)
-	vers, _ := strconv.ParseInt(v, 10, 64)
+	vers, _ := strconv.ParseUint(v, 10, 16)
 	return vers
 }
 
@@ -104,6 +105,10 @@ func main() {
 	// fmt.Printf("%#v %x\n", ver, ver)
 	pBt.Version = byte(ver)
 
+	bport := radiostringtohex(cfg.Bport)
+	pBt.Bport = []byte(bport)
+	fmt.Printf("Bport %#v %x %v\n", bport, bport, pBt.Bport)
+
 	// fmt.Printf(" radioMAC %#v\n", pBt.radioMAC)
 
 	pc, err := net.ListenPacket("udp4", ":1024")
@@ -123,7 +128,7 @@ func main() {
 	}
 }
 
-// handleConnection is a goroutine to handle on connection at a tfmt.Printf("test %#v %#v length=%d\n", rbuf, ver, len(rbuf))ime
+// handleConnection is a goroutine to handle on connection at a time
 func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt packetBt) {
 
 	fmt.Printf("Received from %s %x length=%d\n", addr, buf[:n], len(buf))
@@ -145,8 +150,10 @@ func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt p
 	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Version, len(rbuf))
 	rbuf = append(rbuf, pkt.Board)
 	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Board, len(rbuf))
+	rbuf = append(rbuf, pkt.Bport)
+	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Bport, len(rbuf))
 
-	for i := 1; i < 54; i++ {
+	for i := 1; i < 53; i++ {
 		rbuf = append(rbuf, 0x00)
 	}
 
