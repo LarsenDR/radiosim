@@ -9,6 +9,7 @@ package main
 // licensed under the GPL3
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -83,8 +84,6 @@ func main() {
 		pBt.Board = 0x04
 	} else if radioname == "orion" {
 		pBt.Board = 0x05
-	} else if radioname == "hermes_lite" {
-		pBt.Board = 0x06
 	} else if radioname == "tangerinesdr" {
 		pBt.Board = 0x0a
 	}
@@ -105,9 +104,15 @@ func main() {
 	// fmt.Printf("%#v %x\n", ver, ver)
 	pBt.Version = byte(ver)
 
-	bport := radiostringtohex(cfg.Bport)
-	pBt.Bport = []byte(bport)
-	fmt.Printf("Bport %#v %x %v\n", bport, bport, pBt.Bport)
+	bport, _ := strconv.ParseUint(cfg.Bport, 10, 16)
+	fmt.Printf("%T %04x\n", bport, bport)
+
+	b := make([]byte, 2)
+	binary.BigEndian.PutUint16(b, uint16(bport))
+	pBt.Bport = b
+
+	//pBt.Bport = []byte{0xaa, 0x35}
+	fmt.Printf("pBt.Bport %#v\n", pBt.Bport)
 
 	// fmt.Printf(" radioMAC %#v\n", pBt.radioMAC)
 
@@ -150,7 +155,7 @@ func handleConnection(pc net.PacketConn, n int, addr net.Addr, buf []byte, pkt p
 	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Version, len(rbuf))
 	rbuf = append(rbuf, pkt.Board)
 	// fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Board, len(rbuf))
-	rbuf = append(rbuf, pkt.Bport)
+	rbuf = append(rbuf, pkt.Bport...)
 	fmt.Printf("test %#v %#v length=%d\n", rbuf, pkt.Bport, len(rbuf))
 
 	for i := 1; i < 53; i++ {
